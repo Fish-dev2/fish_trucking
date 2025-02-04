@@ -45,15 +45,20 @@ function SpawnCar(args)
 end
 
 function Contains(table, content)
-    
+    for _, value in ipairs(table) do
+        if value == content then
+            return true
+        end
+    end
+    return false
 end
 
 function SplitString(data)
     a = {}
-    local i = 1
+    local i = 0
     for word in string.gmatch(data, "%S+") do
-        a[i] = word
         i+=1
+        a[i] = word
     end
 
     return a, i
@@ -68,15 +73,14 @@ end
 
 
 local trucksData = LoadResourceFile(GetCurrentResourceName(), "data/trucks.txt")
-local trailers = LoadResourceFile(GetCurrentResourceName(), "data/trailers.txt")
+local trailersData = LoadResourceFile(GetCurrentResourceName(), "data/trailers.txt")
 
-if trucksData and trailers then
+if trucksData and trailersData then
     print("trucksData File Content:\n" .. trucksData)
-    print("Trailers File Content:\n" .. trailers)
+    print("Trailers File Content:\n" .. trailersData)
     print(type(trucksData))
     local trucks, trucksSize = SplitString(trucksData)
-    print(trucks[1])
-    print(trucksSize)
+    local trailers, trailersSize = SplitString(trailersData)
 else
     print("Failed to load file!")
 end
