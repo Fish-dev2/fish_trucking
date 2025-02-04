@@ -1,48 +1,6 @@
 --
--- Functions
+-- Algorithm Functions
 --
-
-
-function SpawnCar(args)
-    local vehicleName = args[1]
-
-    if not IsModelInCdimage(vehicleName) or not IsModelAVehicle(vehicleName) then
-        TriggerEvent('chat:addMessage',{
-            args = {'Uh oh, '.. (vehicleName) .. ' is not a vehicle.'}
-        })
-
-        return
-    end
-    
-    TriggerEvent('chat:addMessage',{
-        args = {'Nice, '.. (vehicleName) .. ' is a vehicle.'}
-    })
-
-    RequestModel(vehicleName)
-
-    while not HasModelLoaded(vehicleName) do
-        Wait(10)
-    end
-
-    local playerPed = PlayerPedId()
-    local pos = GetEntityCoords(playerPed)
-    local heading = GetEntityHeading(playerPed)
-
-    local vehicle = CreateVehicle(
-        vehicleName,
-        pos,
-        heading,
-        true
-    )
-
-    SetPedIntoVehicle(
-        playerPed,
-        vehicle,
-        -1
-    )
-
-    SetModelAsNoLongerNeeded(vehicleName)
-end
 
 function Contains(table, content)
     for _, value in ipairs(table) do
@@ -64,7 +22,58 @@ function SplitString(data)
     return a, i
 end
 
+--
+-- Game Function
+--
 
+
+function SpawnCar(args)
+    local vehicleName = args[1]
+    local trailerName = args[2]
+    
+    RequestModel(vehicleName)
+
+    while not HasModelLoaded(vehicleName) do
+        Wait(1)
+    end
+
+    RequestModel(trailerName)
+
+    while not HasModelLoaded(trailerName) do
+        Wait(1)
+    end
+
+
+    local playerPed = PlayerPedId()
+    local pos = GetEntityCoords(playerPed)
+    local heading = GetEntityHeading(playerPed)
+
+    local vehicle = CreateVehicle(
+        vehicleName,
+        pos,
+        heading,
+        true
+    )
+
+    local trailer = CreateVehicle(
+        trailerName,
+        pos,
+        heading,
+        true
+    )
+
+    AttachVehicleToTrailer(vehicle, trailer, 1.1)
+
+    SetPedIntoVehicle(
+        playerPed,
+        vehicle,
+        -1
+    )
+
+    SetModelAsNoLongerNeeded(vehicleName)
+    SetModelAsNoLongerNeeded(trailerName)
+
+end
 
 
 --
@@ -74,13 +83,14 @@ end
 
 local trucksData = LoadResourceFile(GetCurrentResourceName(), "data/trucks.txt")
 local trailersData = LoadResourceFile(GetCurrentResourceName(), "data/trailers.txt")
+local trucks, trailers, trucksSize, trailersSize
 
 if trucksData and trailersData then
     print("trucksData File Content:\n" .. trucksData)
     print("Trailers File Content:\n" .. trailersData)
     print(type(trucksData))
-    local trucks, trucksSize = SplitString(trucksData)
-    local trailers, trailersSize = SplitString(trailersData)
+    trucks, trucksSize = SplitString(trucksData)
+    trailers, trailersSize = SplitString(trailersData)
 else
     print("Failed to load file!")
 end
@@ -92,11 +102,11 @@ end
 
 
 RegisterCommand('truck', function(_,args)
-
-    
-
-end)
-RegisterCommand('trailer', function(_,args)
+    local vehicleName = args[1]
+    local trailerName = args[2]
+    if (Contains(trucks, vehicleName) and Contains(trailers,trailerName)) then
+        SpawnCar(args)
+    end
 
 
 end)
