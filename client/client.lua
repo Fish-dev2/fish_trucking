@@ -1,29 +1,95 @@
-local trucks = LoadResourceFile(GetCurrentResourceName(), "data/trucks.txt")
+--
+-- Functions
+--
+
+
+function SpawnCar(args)
+    local vehicleName = args[1]
+
+    if not IsModelInCdimage(vehicleName) or not IsModelAVehicle(vehicleName) then
+        TriggerEvent('chat:addMessage',{
+            args = {'Uh oh, '.. (vehicleName) .. ' is not a vehicle.'}
+        })
+
+        return
+    end
+    
+    TriggerEvent('chat:addMessage',{
+        args = {'Nice, '.. (vehicleName) .. ' is a vehicle.'}
+    })
+
+    RequestModel(vehicleName)
+
+    while not HasModelLoaded(vehicleName) do
+        Wait(10)
+    end
+
+    local playerPed = PlayerPedId()
+    local pos = GetEntityCoords(playerPed)
+    local heading = GetEntityHeading(playerPed)
+
+    local vehicle = CreateVehicle(
+        vehicleName,
+        pos,
+        heading,
+        true
+    )
+
+    SetPedIntoVehicle(
+        playerPed,
+        vehicle,
+        -1
+    )
+
+    SetModelAsNoLongerNeeded(vehicleName)
+end
+
+function Contains(table, content)
+    
+end
+
+function SplitString(data)
+    a = {}
+    local i = 1
+    for word in string.gmatch(data, "%S+") do
+        a[i] = word
+        i+=1
+    end
+
+    return a, i
+end
+
+
+
+
+--
+-- First Load In
+--
+
+
+local trucksData = LoadResourceFile(GetCurrentResourceName(), "data/trucks.txt")
 local trailers = LoadResourceFile(GetCurrentResourceName(), "data/trailers.txt")
 
-if trucks and trailers then
-    print("Trucks File Content:\n" .. trucks)
+if trucksData and trailers then
+    print("trucksData File Content:\n" .. trucksData)
     print("Trailers File Content:\n" .. trailers)
+    print(type(trucksData))
+    local trucks, trucksSize = SplitString(trucksData)
+    print(trucks[1])
+    print(trucksSize)
 else
     print("Failed to load file!")
 end
 
 
-
---first i should add teleporting and waypoint reading
+--
+-- Commands
+--
 
 
 RegisterCommand('truck', function(_,args)
-    local targetId = args[1]
 
     
-
-    if not targetId then
-        TriggerEvent('chat:addMessage', {
-            args = {'Please provide a target ID.',}
-        })
-        return
-    end
 
 end)
 RegisterCommand('trailer', function(_,args)
@@ -36,46 +102,31 @@ end)
 
 
 RegisterCommand('+teleportwaypoint', function(_,args)
-    local playerped = PlayerPedId()
-    local waypoint = GetFirstBlipInfoId(8) -- 8 is the ID for waypoints
-    if DoesBlipExist(waypoint) then
-        local x, y, z = table.unpack(GetBlipCoords(waypoint))
 
-        local groundZ = nil
-        local retval = nil
-        for i=0, 1000.0, 75.0 do
-            StartPlayerTeleport(PlayerId(), x, y, i, 0.0, false, false, true)
+    DoScreenFadeOut(0)
+    local waypointBlip = GetFirstBlipInfoId(GetWaypointBlipEnumId())
+	local blipPos = GetBlipInfoIdCoord(waypointBlip) 
 
-            --Wait(100)
-            while IsPlayerTeleportActive() do
-                Citizen.Wait(0)
-            end
+	local z = GetHeightmapTopZForPosition(blipPos.x, blipPos.y)
+	local _, gz = GetGroundZFor_3dCoord(blipPos.x, blipPos.y, z, true)
 
-            retval, groundZ = GetGroundZFor_3dCoord(x, y, i, true)
+	SetEntityCoords(PlayerPedId(), blipPos.x, blipPos.y, z, true, false, false, false)
+	FreezeEntityPosition(PlayerPedId(), true)
 
-            if retval then
-                break
-            end
-        end
-        --Wait(300)
-        
-        print(retval)
-        print(groundZ)
+	repeat
+		Citizen.Wait(50)
+		_, gz = GetGroundZFor_3dCoord(blipPos.x, blipPos.y, z, true)
+	until gz ~= 0
 
-        StartPlayerTeleport(PlayerId(), x, y, groundZ+5.0, 0.0, false, true, true)
-        while IsPlayerTeleportActive() do
-            Citizen.Wait(0)
-        end
+	SetEntityCoords(PlayerPedId(), blipPos.x, blipPos.y, gz, true, false, false, false)
+	FreezeEntityPosition(PlayerPedId(), false)
 
-        TriggerEvent('chat:addMessage', {
-            args = {'Waypoint Coords: ', coords}
-        })
+    local coords = string.format("X: %.2f, Y: %.2f, Z: %.2f", blipPos.x, blipPos.y, gz)
+    TriggerEvent('chat:addMessage', {
+        args = {'Succesful teleport to: ', coords}
+    })      
+    DoScreenFadeIn(100)
 
-    else
-        TriggerEvent('chat:addMessage', {
-            args = {'No waypoint set.',}
-        })
-    end
 end)
 
 RegisterCommand('getcoords', function(_,args)
@@ -85,4 +136,16 @@ end)
 
 
 
+
+
+RegisterCommand('car', function(source,args)
+    SpawnCar(args)
+end)
+
+--
+-- KeyMappings
+--
+
 RegisterKeyMapping('+teleportwaypoint', 'Teleport To Marked Waypoint', 'keyboard', 'PAGEUP')
+
+
