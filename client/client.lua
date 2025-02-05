@@ -26,6 +26,54 @@ end
 -- Game Function
 --
 
+--Vector3 - cpCoords, cpNextCoords
+--Number - cpType, radius, blipType, blipColor
+--Boolean - setRoute
+--colorTable(RGBA) - color
+-- https://docs.fivem.net/docs/game-references/blips/
+-- https://docs.fivem.net/docs/game-references/checkpoints/
+
+function CreateCheckpoint(cpType, cpCoords, cpNextCoords, radius, color, blipType, blipColor, setRoute)
+
+    -- Remove any existing checkpoint
+    if checkpoint then
+        DeleteCheckpoint(checkpoint)
+        checkpoint = nil
+    end
+
+    checkpoint = CreateCheckpoint(
+        cpType,  -- Cylinder type
+        cpCoords.x, cpCoords.y, cpCoords.z,  -- Position
+        cpNextCoords.x, cpNextCoords.y, cpNextCoords.z,  -- Target position
+        radius,  -- Radius
+        color.r, color.g, color.b, color.a,  -- RGBA
+        0  -- Reserved, always 0
+    )
+
+    local blip = AddBlipForCoord(cpCoords.x, cpCoords.y, cpCoords.z)
+    SetBlipSprite(blip, blipType)
+    SetBlipColour(blip, blipColor) 
+    SetBlipRoute(blip, setRoute)
+
+    -- Monitor player distance to checkpoint
+    Citizen.CreateThread(function()
+        while checkpoint do
+            Citizen.Wait(500)
+
+            local player = PlayerPedId()
+            local playerCoords = GetEntityCoords(player)
+
+            if #(playerCoords - cpCoords) < 5.0 then
+                print("Checkpoint reached!")
+                DeleteCheckpoint(checkpoint)
+                RemoveBlip(blip)
+                checkpoint = nil
+                return true
+            end
+        end
+    end)
+end
+
 
 function SpawnCar(args)
     local vehicleName = args[1]
