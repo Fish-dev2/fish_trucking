@@ -32,8 +32,7 @@ end
 --colorTable(RGBA) - color
 -- https://docs.fivem.net/docs/game-references/blips/
 -- https://docs.fivem.net/docs/game-references/checkpoints/
-
-function CreateCheckpoint(cpType, cpCoords, cpNextCoords, radius, color, blipType, blipColor, setRoute)
+function CreateRaceCheckpoint(cpType, cpCoords, cpNextCoords, radius, color, blipType, blipColor, setRoute)
 
     -- Remove any existing checkpoint
     if checkpoint then
@@ -68,13 +67,11 @@ function CreateCheckpoint(cpType, cpCoords, cpNextCoords, radius, color, blipTyp
                 DeleteCheckpoint(checkpoint)
                 RemoveBlip(blip)
                 checkpoint = nil
-                return true
+                return
             end
         end
     end)
 end
-
-
 function SpawnCar(args)
     local vehicleName = args[1]
     local trailerName = args[2]
@@ -127,8 +124,6 @@ end
 --
 -- First Load In
 --
-
-
 local trucksData = LoadResourceFile(GetCurrentResourceName(), "data/trucks.txt")
 local trailersData = LoadResourceFile(GetCurrentResourceName(), "data/trailers.txt")
 local trucks, trailers, trucksSize, trailersSize
@@ -142,13 +137,9 @@ if trucksData and trailersData then
 else
     print("Failed to load file!")
 end
-
-
 --
 -- Commands
 --
-
-
 RegisterCommand('truck', function(_,args)
     local vehicleName = args[1]
     local trailerName = args[2]
@@ -158,11 +149,6 @@ RegisterCommand('truck', function(_,args)
 
 
 end)
-
-
-
-
-
 RegisterCommand('+teleportwaypoint', function(_,args)
 
     DoScreenFadeOut(0)
@@ -190,18 +176,18 @@ RegisterCommand('+teleportwaypoint', function(_,args)
     DoScreenFadeIn(100)
 
 end)
-
 RegisterCommand('getcoords', function(_,args)
     local playerCoords = GetEntityCoords(PlayerPedId())
     print(playerCoords)
 end)
-
-
-
-
-
 RegisterCommand('car', function(source,args)
     SpawnCar(args)
+end)
+RegisterCommand('cp', function(_,args)
+    local coords = vector3(-23.351486, -950.762695, 29.410446)
+    local nextCoords = vector3(0.0,0.0,0.0)
+    local color = { r = 255, g = 0, b = 0, a = 100 }
+    CreateRaceCheckpoint(47, coords, nextCoords, 5.0, color, 1, 5, true)
 end)
 
 --
