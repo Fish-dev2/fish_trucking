@@ -54,23 +54,9 @@ function CreateRaceCheckpoint(cpType, cpCoords, cpNextCoords, radius, color, bli
     SetBlipColour(blip, blipColor) 
     SetBlipRoute(blip, setRoute)
 
+    return checkpoint, cpCoords, blip
+    --todo ezt innen kimozgatni a gecibe
     -- Monitor player distance to checkpoint
-    Citizen.CreateThread(function()
-        while checkpoint do
-            Citizen.Wait(500)
-
-            local player = PlayerPedId()
-            local playerCoords = GetEntityCoords(player)
-
-            if #(playerCoords - cpCoords) < 5.0 then
-                print("Checkpoint reached!")
-                DeleteCheckpoint(checkpoint)
-                RemoveBlip(blip)
-                checkpoint = nil
-                return
-            end
-        end
-    end)
 end
 function SpawnCar(args)
     local vehicleName = args[1]
@@ -151,7 +137,7 @@ RegisterCommand('truck', function(_,args)
 end)
 RegisterCommand('+teleportwaypoint', function(_,args)
 
-    DoScreenFadeOut(0)
+    DoScreenFadeOut(50)
     local waypointBlip = GetFirstBlipInfoId(GetWaypointBlipEnumId())
 	local blipPos = GetBlipInfoIdCoord(waypointBlip) 
 
@@ -173,7 +159,7 @@ RegisterCommand('+teleportwaypoint', function(_,args)
     TriggerEvent('chat:addMessage', {
         args = {'Succesful teleport to: ', coords}
     })      
-    DoScreenFadeIn(100)
+    DoScreenFadeIn(50)
 
 end)
 RegisterCommand('getcoords', function(_,args)
@@ -184,10 +170,32 @@ RegisterCommand('car', function(source,args)
     SpawnCar(args)
 end)
 RegisterCommand('cp', function(_,args)
-    local coords = vector3(-23.351486, -950.762695, 29.410446)
-    local nextCoords = vector3(0.0,0.0,0.0)
     local color = { r = 255, g = 0, b = 0, a = 100 }
-    CreateRaceCheckpoint(47, coords, nextCoords, 5.0, color, 1, 5, true)
+
+    local coordsTable = {vector3(-23.351486, -950.762695, 29.410446),vector3(-209.427170, 6545.034180, 11.09668), vector3(0.0, 0.0, 0.0)}
+
+    local i = 1
+    local checkpoint, cpCoords, blip = CreateRaceCheckpoint(0, coordsTable[i], coordsTable[i+1], 5.0, color, 1, 5, true)
+
+    Citizen.CreateThread(function()
+        while checkpoint do
+            Citizen.Wait(500)
+            local player = PlayerPedId()
+            local playerCoords = GetEntityCoords(player)
+
+            if #(playerCoords - cpCoords) < 5.0 then
+                i = i + 1
+                DeleteCheckpoint(checkpoint)
+                RemoveBlip(blip)
+                if i <= 2 then
+                    checkpoint, cpCoords, blip = CreateRaceCheckpoint(0, coordsTable[i], coordsTable[i+1], 5.0, color, 1, 5, true)
+                else
+                    print("Checkpoint reached!")
+                    checkpoint = nil
+                end
+            end
+        end
+    end)
 end)
 
 --
